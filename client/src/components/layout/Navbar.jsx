@@ -6,7 +6,7 @@ import Button from '../ui/Button';
 
 // Links depend on who is logged in: guests, users and admins each see their own.
 const USER_LINKS = [
-  { to: '/', label: 'Home', end: true },
+  { to: '/', label: 'Services', end: true },
   { to: '/appointments', label: 'My Appointments' },
 ];
 const ADMIN_LINKS = [{ to: '/admin', label: 'Dashboard' }];

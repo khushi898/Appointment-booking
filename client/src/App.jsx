@@ -6,6 +6,7 @@ import HomePage from './pages/HomePage';
 import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
 import MyAppointmentsPage from './pages/MyAppointmentsPage';
+import BookPage from './pages/BookPage';
 import AdminDashboardPage from './pages/admin/AdminDashboardPage';
 import NotFoundPage from './pages/NotFoundPage';
 
@@ -27,6 +28,7 @@ export default function App() {
           {/* Any logged-in user */}
           <Route element={<ProtectedRoute />}>
             <Route path="appointments" element={<MyAppointmentsPage />} />
+            <Route path="book/:serviceId" element={<BookPage />} />
           </Route>
 
           {/* Admins only */}
