@@ -6,10 +6,15 @@ const helmet = require('helmet');
 
 const { env } = require('./config/env');
 const healthRoutes = require('./routes/health.routes');
+const authRoutes = require('./routes/auth.routes');
 const notFound = require('./middleware/notFound');
 const errorHandler = require('./middleware/errorHandler');
 
 const app = express();
+
+// Railway/Render sit behind one proxy. Trusting it lets req.ip be the real
+// client IP, so the rate limiter limits each user rather than the proxy.
+app.set('trust proxy', 1);
 
 // Security headers (hides "X-Powered-By: Express", adds anti-sniffing headers, etc.)
 app.use(helmet());
@@ -22,6 +27,7 @@ app.use(express.json({ limit: '10kb' }));
 
 // Routes
 app.use('/api/health', healthRoutes);
+app.use('/api/auth', authRoutes);
 
 // Must come after all routes: 404 for unknown routes, then the central error handler.
 app.use(notFound);
