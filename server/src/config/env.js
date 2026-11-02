@@ -9,6 +9,9 @@ const env = {
   mongoUri: process.env.MONGODB_URI,
   jwtSecret: process.env.JWT_SECRET,
   jwtExpiresIn: process.env.JWT_EXPIRES_IN || '1d',
+  // IANA timezone of the business, e.g. "Asia/Kolkata" or "Europe/London".
+  // Used to decide what "today" and "past appointment" mean.
+  businessTimezone: process.env.BUSINESS_TIMEZONE || 'UTC',
   // Max requests per IP to /api/auth in a 15-minute window
   authRateLimitMax: Number(process.env.AUTH_RATE_LIMIT_MAX) || 20,
   // "http://a.com, http://b.com" -> ['http://a.com', 'http://b.com']

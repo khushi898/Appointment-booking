@@ -4,4 +4,5 @@
 process.env.JWT_SECRET = 'test-jwt-secret';
 process.env.JWT_EXPIRES_IN = '1h';
 process.env.CLIENT_ORIGIN = 'http://localhost:5173';
+process.env.BUSINESS_TIMEZONE = 'UTC';
 process.env.AUTH_RATE_LIMIT_MAX = process.env.AUTH_RATE_LIMIT_MAX || '1000';
