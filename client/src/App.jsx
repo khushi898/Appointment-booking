@@ -8,6 +8,9 @@ import RegisterPage from './pages/RegisterPage';
 import MyAppointmentsPage from './pages/MyAppointmentsPage';
 import BookPage from './pages/BookPage';
 import AdminDashboardPage from './pages/admin/AdminDashboardPage';
+import AdminServicesPage from './pages/admin/AdminServicesPage';
+import AdminAvailabilityPage from './pages/admin/AdminAvailabilityPage';
+import AdminAppointmentsPage from './pages/admin/AdminAppointmentsPage';
 import NotFoundPage from './pages/NotFoundPage';
 
 // Every page in the app and who may see it.
@@ -34,6 +37,9 @@ export default function App() {
           {/* Admins only */}
           <Route element={<ProtectedRoute role="admin" />}>
             <Route path="admin" element={<AdminDashboardPage />} />
+            <Route path="admin/services" element={<AdminServicesPage />} />
+            <Route path="admin/availability" element={<AdminAvailabilityPage />} />
+            <Route path="admin/appointments" element={<AdminAppointmentsPage />} />
           </Route>
 
           <Route path="*" element={<NotFoundPage />} />
