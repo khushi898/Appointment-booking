@@ -1,6 +1,6 @@
 // Display helpers for dates, prices and durations.
 
-const CURRENCY = import.meta.env.VITE_CURRENCY || 'INR';
+const CURRENCY = import.meta.env.VITE_CURRENCY || 'GBP';
 
 // "2026-11-20" -> "Fri, 20 Nov 2026"
 // Built from the parts as a LOCAL date: new Date('2026-11-20') would be read
@@ -10,9 +10,10 @@ export function formatDate(dateString, options = { weekday: 'short', day: 'numer
   return new Date(year, month - 1, day).toLocaleDateString(undefined, options);
 }
 
-// 25 -> "₹25.00"
+// 25 -> "£25.00"
+// 'en-GB' fixes the number style (25.00, 1,250.00) so it matches the £ currency.
 export function formatPrice(amount) {
-  return new Intl.NumberFormat(undefined, { style: 'currency', currency: CURRENCY }).format(amount);
+  return new Intl.NumberFormat('en-GB', { style: 'currency', currency: CURRENCY }).format(amount);
 }
 
 // 90 -> "1 h 30 min", 30 -> "30 min"
