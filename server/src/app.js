@@ -9,6 +9,7 @@ const healthRoutes = require('./routes/health.routes');
 const authRoutes = require('./routes/auth.routes');
 const serviceRoutes = require('./routes/service.routes');
 const availabilityRoutes = require('./routes/availability.routes');
+const appointmentRoutes = require('./routes/appointment.routes');
 const notFound = require('./middleware/notFound');
 const errorHandler = require('./middleware/errorHandler');
 
@@ -32,6 +33,7 @@ app.use('/api/health', healthRoutes);
 app.use('/api/auth', authRoutes);
 app.use('/api/services', serviceRoutes);
 app.use('/api/availability', availabilityRoutes);
+app.use('/api/appointments', appointmentRoutes);
 
 // Must come after all routes: 404 for unknown routes, then the central error handler.
 app.use(notFound);
