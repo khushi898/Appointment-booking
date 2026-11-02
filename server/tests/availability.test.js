@@ -1,6 +1,8 @@
 const request = require('supertest');
 const app = require('../src/app');
 const Availability = require('../src/models/Availability');
+const Appointment = require('../src/models/Appointment');
+const Service = require('../src/models/Service');
 const db = require('./setup/db');
 const { createUserWithToken } = require('./setup/users');
 const { nowInBusinessTz, addDays } = require('../src/utils/dateTime');
@@ -128,6 +130,61 @@ describe('GET /api/availability?from=&to=', () => {
 
     expect(res.status).toBe(400);
     expect(res.body.message).toBe('Date range can be at most 62 days');
+  });
+});
+
+describe('Availability with bookings', () => {
+  let service;
+  let user;
+  beforeEach(async () => {
+    service = await Service.create({ name: 'Haircut', durationMinutes: 30, price: 25 });
+    ({ user } = await createUserWithToken('user'));
+    await Availability.create({ date: FUTURE, slots: ['09:00', '09:30', '10:00'] });
+    await Appointment.create({ user: user._id, service: service._id, date: FUTURE, time: '09:30' });
+    // A cancelled booking must not block its slot
+    await Appointment.create({ user: user._id, service: service._id, date: FUTURE, time: '10:00', status: 'cancelled' });
+  });
+
+  it('GET /:date shows booked and available slots', async () => {
+    const res = await request(app).get(`/api/availability/${FUTURE}`);
+
+    expect(res.body.data.day).toMatchObject({
+      slots: ['09:00', '09:30', '10:00'],
+      bookedSlots: ['09:30'],
+      availableSlots: ['09:00', '10:00'],
+    });
+  });
+
+  it('GET range shows booked and available slots per day', async () => {
+    const res = await request(app).get('/api/availability?from=2099-01-01&to=2099-01-31');
+    expect(res.body.data.days[0]).toMatchObject({ bookedSlots: ['09:30'], availableSlots: ['09:00', '10:00'] });
+  });
+
+  it('a past day has no available slots', async () => {
+    await Availability.collection.insertOne({ date: '2000-01-01', slots: ['09:00'] });
+    const res = await request(app).get('/api/availability/2000-01-01');
+    expect(res.body.data.day.availableSlots).toEqual([]);
+  });
+
+  it('PUT returns 409 when removing a booked slot', async () => {
+    const res = await request(app).put(`/api/availability/${FUTURE}`).set(adminAuth).send({ slots: ['09:00'] });
+
+    expect(res.status).toBe(409);
+    expect(res.body.message).toBe('Cannot remove booked slots: 09:30');
+  });
+
+  it('PUT can remove slots that are not booked', async () => {
+    const res = await request(app).put(`/api/availability/${FUTURE}`).set(adminAuth).send({ slots: ['09:30'] });
+
+    expect(res.status).toBe(200);
+    expect(res.body.data.day.slots).toEqual(['09:30']);
+  });
+
+  it('DELETE returns 409 when the day has bookings', async () => {
+    const res = await request(app).delete(`/api/availability/${FUTURE}`).set(adminAuth);
+
+    expect(res.status).toBe(409);
+    expect(await Availability.countDocuments({ date: FUTURE })).toBe(1);
   });
 });
 

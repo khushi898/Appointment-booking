@@ -13,4 +13,11 @@ const paginationQuery = z.object({
   search: z.string().trim().max(100, 'search must be at most 100 characters').optional(),
 });
 
-module.exports = { paginationQuery };
+// A MongoDB ObjectId is 24 hex characters, e.g. "507f1f77bcf86cd799439011"
+const objectId = (label) =>
+  z.string({ error: `${label} is required` }).regex(/^[0-9a-fA-F]{24}$/, `${label} must be a valid id`);
+
+// For routes like /api/appointments/:id
+const idParam = z.object({ id: objectId('id') });
+
+module.exports = { paginationQuery, objectId, idParam };
