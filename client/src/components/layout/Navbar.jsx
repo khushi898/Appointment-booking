@@ -9,7 +9,12 @@ const USER_LINKS = [
   { to: '/', label: 'Services', end: true },
   { to: '/appointments', label: 'My Appointments' },
 ];
-const ADMIN_LINKS = [{ to: '/admin', label: 'Dashboard' }];
+const ADMIN_LINKS = [
+  { to: '/admin', label: 'Dashboard', end: true },
+  { to: '/admin/services', label: 'Services' },
+  { to: '/admin/availability', label: 'Availability' },
+  { to: '/admin/appointments', label: 'Appointments' },
+];
 
 const linkClass = ({ isActive }) =>
   `block rounded-md px-3 py-2 text-sm font-medium ${

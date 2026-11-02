@@ -10,6 +10,13 @@ export function formatDate(dateString, options = { weekday: 'short', day: 'numer
   return new Date(year, month - 1, day).toLocaleDateString(undefined, options);
 }
 
+// Today's date in this browser as "YYYY-MM-DD" (e.g. for <input type="date" min>)
+export function todayISO() {
+  const now = new Date();
+  const pad = (n) => String(n).padStart(2, '0');
+  return `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`;
+}
+
 // 25 -> "£25.00"
 // 'en-GB' fixes the number style (25.00, 1,250.00) so it matches the £ currency.
 export function formatPrice(amount) {
