@@ -35,6 +35,12 @@ function nowInBusinessTz(now = new Date()) {
   return { date: `${get('year')}-${get('month')}-${get('day')}`, time: `${get('hour')}:${get('minute')}` };
 }
 
+// True if the slot has already started (or is starting this minute) in the business timezone.
+// "2026-11-20T09:00" style strings compare correctly as plain text.
+function isPastSlot(date, time, now = nowInBusinessTz()) {
+  return `${date}T${time}` <= `${now.date}T${now.time}`;
+}
+
 // addDays('2026-11-30', 1) -> '2026-12-01'
 function addDays(dateString, days) {
   const [year, month, day] = dateString.split('-').map(Number);
@@ -46,4 +52,13 @@ function daysBetween(from, to) {
   return Math.round((Date.parse(to) - Date.parse(from)) / (24 * 60 * 60 * 1000));
 }
 
-module.exports = { DATE_REGEX, TIME_REGEX, isValidDate, isValidTime, nowInBusinessTz, addDays, daysBetween };
+module.exports = {
+  DATE_REGEX,
+  TIME_REGEX,
+  isValidDate,
+  isValidTime,
+  nowInBusinessTz,
+  isPastSlot,
+  addDays,
+  daysBetween,
+};
