@@ -1,11 +1,12 @@
 const ApiError = require('../utils/ApiError');
 
-// Returns a middleware that checks req.body against a Zod schema.
-// Valid: req.body is replaced with the cleaned data (trimmed, unknown fields removed).
+// Returns a middleware that checks req.body (default) or req.query against a Zod schema.
+// Valid: the cleaned data (trimmed, defaults applied, unknown fields removed) replaces
+//        req.body, or is put on req.validatedQuery (Express 5 makes req.query read-only).
 // Invalid: 400 with a list of { field, message } so the frontend can show them.
-function validate(schema) {
+function validate(schema, source = 'body') {
   return (req, res, next) => {
-    const result = schema.safeParse(req.body ?? {});
+    const result = schema.safeParse(req[source] ?? {});
     if (!result.success) {
       const details = result.error.issues.map((issue) => ({
         field: issue.path.join('.'),
@@ -13,7 +14,11 @@ function validate(schema) {
       }));
       return next(new ApiError(400, 'Validation failed', details));
     }
-    req.body = result.data;
+    if (source === 'query') {
+      req.validatedQuery = result.data;
+    } else {
+      req[source] = result.data;
+    }
     next();
   };
 }
