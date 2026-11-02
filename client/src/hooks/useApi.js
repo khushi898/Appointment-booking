@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { api } from '../lib/api';
 
 // Loads data from a GET endpoint and re-loads whenever the path or query changes.
-// Returns { data, error, loading, reload }.
+// Returns { data, error, loading, reload }. Pass path = null to not fetch (yet).
 //
 // Each result is saved together with the "key" (path + query) it was fetched for.
 // `loading` is simply "the saved result is not for the current key yet", so we
@@ -15,6 +15,7 @@ export function useApi(path, query) {
   const requestKey = `${path}?${queryKey}#${reloadCount}`;
 
   useEffect(() => {
+    if (!path) return;
     // If the user changes page/search before this request finishes, ignore its
     // answer — otherwise an older, slower response could overwrite a newer one.
     let ignore = false;
@@ -29,10 +30,11 @@ export function useApi(path, query) {
 
   const reload = useCallback(() => setReloadCount((count) => count + 1), []);
 
+  const isCurrent = result.key === requestKey;
   return {
-    data: result.data,
-    error: result.key === requestKey ? result.error : null,
-    loading: result.key !== requestKey,
+    data: path ? result.data : null, // keeps the previous data while re-loading
+    error: path && isCurrent ? result.error : null,
+    loading: Boolean(path) && !isCurrent,
     reload,
   };
 }
