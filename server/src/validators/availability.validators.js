@@ -1,11 +1,8 @@
 const { z } = require('zod');
-const { isValidDate, isValidTime } = require('../utils/dateTime');
+const { isValidTime } = require('../utils/dateTime');
+const { dateString } = require('./common.validators');
 
 const MAX_RANGE_DAYS = 62;
-
-const dateString = z
-  .string({ error: 'Date is required' })
-  .refine(isValidDate, 'Date must be a real date in YYYY-MM-DD format');
 
 // For routes like /api/availability/:date
 const dateParam = z.object({ date: dateString });

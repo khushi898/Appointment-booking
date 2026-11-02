@@ -1,12 +1,14 @@
 const Appointment = require('../models/Appointment');
 const Service = require('../models/Service');
 const Availability = require('../models/Availability');
+const User = require('../models/User');
 const ApiError = require('../utils/ApiError');
 const { nowInBusinessTz, isPastSlot } = require('../utils/dateTime');
-const { getSkip, buildPagination } = require('../utils/pagination');
+const { getSkip, buildPagination, escapeRegex } = require('../utils/pagination');
 
-// Service fields to include when we populate an appointment
+// Fields to include when we populate an appointment
 const SERVICE_FIELDS = 'name durationMinutes price';
+const USER_FIELDS = 'name email';
 
 // POST /api/appointments — book a slot for the logged-in user.
 async function bookAppointment(req, res) {
@@ -107,4 +109,118 @@ async function cancelMyAppointment(req, res) {
   res.status(200).json({ success: true, message: 'Appointment cancelled', data: { appointment } });
 }
 
-module.exports = { bookAppointment, listMyAppointments, cancelMyAppointment };
+// ---------- Admin ----------
+
+// GET /api/appointments?page=&limit=&status=&date=|from=&to=&search=&sort= (admin)
+async function listAllAppointments(req, res) {
+  const { page, limit, status, date, from, to, search, sort } = req.validatedQuery;
+
+  const filter = {};
+  if (status) filter.status = status;
+  if (date) filter.date = date;
+  if (from || to) {
+    filter.date = {};
+    if (from) filter.date.$gte = from;
+    if (to) filter.date.$lte = to;
+  }
+
+  // Customer name/email and service name live in other collections, so first
+  // find the ids of matching users and services, then filter appointments by them.
+  if (search) {
+    const pattern = new RegExp(escapeRegex(search), 'i');
+    const [userIds, serviceIds] = await Promise.all([
+      User.find({ $or: [{ name: pattern }, { email: pattern }] }).distinct('_id'),
+      Service.find({ name: pattern }).distinct('_id'),
+    ]);
+    filter.$or = [{ user: { $in: userIds } }, { service: { $in: serviceIds } }];
+  }
+
+  const direction = sort === 'date' ? 1 : -1;
+  const [appointments, total] = await Promise.all([
+    Appointment.find(filter)
+      .sort({ date: direction, time: direction })
+      .skip(getSkip(page, limit))
+      .limit(limit)
+      .populate('user', USER_FIELDS)
+      .populate('service', SERVICE_FIELDS),
+    Appointment.countDocuments(filter),
+  ]);
+
+  res.status(200).json({
+    success: true,
+    data: { appointments, pagination: buildPagination(page, limit, total) },
+  });
+}
+
+// PATCH /api/appointments/:id/status (admin) — mark a booking completed or no-show.
+async function updateAppointmentStatus(req, res) {
+  const appointment = await Appointment.findById(req.params.id);
+  if (!appointment) {
+    throw new ApiError(404, 'Appointment not found');
+  }
+  if (appointment.status !== 'booked') {
+    throw new ApiError(400, `Cannot change an appointment that is ${appointment.status}`);
+  }
+  // You can only know if someone showed up once their slot has started
+  if (!isPastSlot(appointment.date, appointment.time)) {
+    throw new ApiError(400, `Cannot mark an upcoming appointment as ${req.body.status}`);
+  }
+
+  appointment.status = req.body.status;
+  await appointment.save();
+
+  await appointment.populate([
+    { path: 'user', select: USER_FIELDS },
+    { path: 'service', select: SERVICE_FIELDS },
+  ]);
+  res.status(200).json({ success: true, data: { appointment } });
+}
+
+// GET /api/appointments/stats (admin) — numbers for the dashboard cards,
+// computed inside MongoDB with an aggregation pipeline.
+async function getAppointmentStats(req, res) {
+  const now = nowInBusinessTz();
+
+  const [byStatusRows, todayCount, upcomingCount] = await Promise.all([
+    Appointment.aggregate([
+      // Join each appointment with its service, so we can read the price
+      { $lookup: { from: 'services', localField: 'service', foreignField: '_id', as: 'service' } },
+      { $unwind: '$service' },
+      // One row per status: how many appointments, and the sum of their prices
+      { $group: { _id: '$status', count: { $sum: 1 }, revenue: { $sum: '$service.price' } } },
+    ]),
+    Appointment.countDocuments({ date: now.date, status: 'booked' }),
+    Appointment.countDocuments({
+      status: 'booked',
+      $or: [{ date: { $gt: now.date } }, { date: now.date, time: { $gt: now.time } }],
+    }),
+  ]);
+
+  // Turn [{ _id: 'booked', count: 3 }, ...] into { booked: 3, cancelled: 0, ... }
+  const byStatus = Object.fromEntries(Appointment.STATUSES.map((status) => [status, 0]));
+  let completedRevenue = 0;
+  byStatusRows.forEach((row) => {
+    byStatus[row._id] = row.count;
+    if (row._id === 'completed') completedRevenue = row.revenue;
+  });
+
+  res.status(200).json({
+    success: true,
+    data: {
+      total: Object.values(byStatus).reduce((sum, count) => sum + count, 0),
+      byStatus,
+      todayBooked: todayCount,
+      upcomingBooked: upcomingCount,
+      completedRevenue,
+    },
+  });
+}
+
+module.exports = {
+  bookAppointment,
+  listMyAppointments,
+  cancelMyAppointment,
+  listAllAppointments,
+  updateAppointmentStatus,
+  getAppointmentStats,
+};
