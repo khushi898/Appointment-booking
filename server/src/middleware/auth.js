@@ -2,15 +2,14 @@ const User = require('../models/User');
 const ApiError = require('../utils/ApiError');
 const { verifyToken } = require('../utils/token');
 
-// 401 = "I don't know who you are" (no token, bad token, expired token).
-// Expects the header:  Authorization: Bearer <token>
-async function protect(req, res, next) {
-  const header = req.headers.authorization || '';
-  const [scheme, token] = header.split(' ');
-  if (scheme !== 'Bearer' || !token) {
-    throw new ApiError(401, 'Not authenticated: token missing');
-  }
+// Reads "Authorization: Bearer <token>" and returns the token, or null if absent.
+function getBearerToken(req) {
+  const [scheme, token] = (req.headers.authorization || '').split(' ');
+  return scheme === 'Bearer' && token ? token : null;
+}
 
+// Verifies the token and loads its user from the DB. Throws 401 if anything is wrong.
+async function getUserFromToken(token) {
   let payload;
   try {
     payload = verifyToken(token);
@@ -25,8 +24,26 @@ async function protect(req, res, next) {
   if (!user) {
     throw new ApiError(401, 'User for this token no longer exists');
   }
+  return user;
+}
 
-  req.user = user;
+// 401 = "I don't know who you are" (no token, bad token, expired token).
+async function protect(req, res, next) {
+  const token = getBearerToken(req);
+  if (!token) {
+    throw new ApiError(401, 'Not authenticated: token missing');
+  }
+  req.user = await getUserFromToken(token);
+  next();
+}
+
+// For public routes that show extra data to logged-in users (e.g. admins see
+// inactive services). No token = continue as a guest; a bad token is still a 401.
+async function optionalAuth(req, res, next) {
+  const token = getBearerToken(req);
+  if (token) {
+    req.user = await getUserFromToken(token);
+  }
   next();
 }
 
@@ -38,4 +55,4 @@ function adminOnly(req, res, next) {
   next();
 }
 
-module.exports = { protect, adminOnly };
+module.exports = { protect, optionalAuth, adminOnly };
