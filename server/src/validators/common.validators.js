@@ -1,4 +1,5 @@
 const { z } = require('zod');
+const { isValidDate } = require('../utils/dateTime');
 
 // Shared ?page=&limit=&search= rules for every list endpoint.
 // Query values always arrive as strings, so z.coerce turns "2" into 2.
@@ -20,4 +21,9 @@ const objectId = (label) =>
 // For routes like /api/appointments/:id
 const idParam = z.object({ id: objectId('id') });
 
-module.exports = { paginationQuery, objectId, idParam };
+// "YYYY-MM-DD" that is also a real calendar date
+const dateString = z
+  .string({ error: 'Date is required' })
+  .refine(isValidDate, 'Date must be a real date in YYYY-MM-DD format');
+
+module.exports = { paginationQuery, objectId, idParam, dateString };
