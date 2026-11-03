@@ -22,7 +22,7 @@ Two roles: **User** (patient) and **Admin** (clinic staff).
 
 | Role | Email | Password |
 |---|---|---|
-| Admin | `<admin email>` | `<admin password>` |
+| Admin | `admin@bookeasy.test` | `Adminbookeasy@123` |
 | User | `demo.patient@bookeasy.test` | `BookEasyDemo2026!` |
 
 These are demo accounts for reviewers only.
