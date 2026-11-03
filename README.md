@@ -10,9 +10,9 @@ Two roles: **User** (patient) and **Admin** (clinic staff).
 
 | | URL |
 |---|---|
-| Frontend (Vercel) | `https://<your-app>.vercel.app` |
-| API (Render) | `https://<your-api>.onrender.com` |
-| Health check | `https://<your-api>.onrender.com/api/health` |
+| Frontend (Vercel) | https://bookeasy-rho.vercel.app |
+| API (Render) | https://bookeasy-api-qa0f.onrender.com |
+| Health check | https://bookeasy-api-qa0f.onrender.com/api/health |
 | GitHub | https://github.com/khushi898/appointment-booking |
 
 > The API runs on Render's free plan, which sleeps after ~15 minutes without traffic. The first request
@@ -23,7 +23,7 @@ Two roles: **User** (patient) and **Admin** (clinic staff).
 | Role | Email | Password |
 |---|---|---|
 | Admin | `<admin email>` | `<admin password>` |
-| User | `<user email>` | `<user password>` |
+| User | `demo.patient@bookeasy.test` | `BookEasyDemo2026!` |
 
 These are demo accounts for reviewers only.
 
@@ -309,20 +309,21 @@ Running it more than twice within 15 minutes hits the auth rate limit (429).
    `NODE_ENV=production`, `MONGODB_URI`, `JWT_SECRET` (a new random value), `JWT_EXPIRES_IN=1d`,
    `BUSINESS_TIMEZONE=Europe/London`, `CLIENT_ORIGIN` (set in step 4 below; use `http://localhost:5173` for now).
 4. **Advanced → Health Check Path:** `/api/health`
-5. **Create Web Service**, wait for "Live", then open `https://<your-api>.onrender.com/api/health`.
+5. **Create Web Service**, wait for "Live", then open `https://<your-api>.onrender.com/api/health`
+   (this project: https://bookeasy-api-qa0f.onrender.com/api/health).
 
 ### 3. Frontend on Vercel
 1. https://vercel.com → **Add New → Project** → import this repository.
 2. **Root Directory:** `client` (Framework preset **Vite** is detected; build `npm run build`, output `dist`).
-3. **Environment Variables:** `VITE_API_URL=https://<your-api>.onrender.com` (no trailing slash), `VITE_CURRENCY=GBP`.
-4. **Deploy** and copy the URL, e.g. `https://<your-app>.vercel.app`.
+3. **Environment Variables:** `VITE_API_URL=https://bookeasy-api-qa0f.onrender.com` (no trailing slash), `VITE_CURRENCY=GBP`.
+4. **Deploy** and copy the URL (this project: `https://bookeasy-rho.vercel.app`).
 
 `client/vercel.json` rewrites every path to `index.html`, so refreshing a page like `/appointments`
 works (React Router handles the URL in the browser). `VITE_` variables are baked in at build time —
 after changing one, redeploy.
 
 ### 4. Connect them (CORS)
-Render → your service → **Environment** → set `CLIENT_ORIGIN=https://<your-app>.vercel.app`
+Render → your service → **Environment** → set `CLIENT_ORIGIN=https://bookeasy-rho.vercel.app`
 (exact URL, no trailing slash) → **Save** (Render redeploys). Open the Vercel site and log in.
 
 ## Known limitations
